@@ -27,6 +27,7 @@ const MapScreen = () => {
   const [isTracking, setIsTracking] = useState<boolean>(false);
   const watchId = useRef(0);
   const timeInterval = useRef<NodeJS.Timeout | null>(null);
+  const splitTimesRef = useRef<number[]>([]);
 
   const requestPermissions = async () => {
     const permission = (Platform.OS === 'android') ? ANDROID_PERMISSION : IOS_PERMISSION;
@@ -35,6 +36,7 @@ const MapScreen = () => {
     if (status !== RESULTS.GRANTED) {
       status = await request(permission);
     }
+    console.log(status)
     if (status !== RESULTS.GRANTED) {
       Alert.alert(
         'Permission needed',
@@ -75,6 +77,16 @@ const MapScreen = () => {
     const newSegmentDistance = calculateDistance(prev, curr);
     
     setDistance(prevDistance => prevDistance + newSegmentDistance);
+
+    // calculate 100m spilt times
+    if ((distance / 100) >= splitTimesRef.current.length + 1) {
+      const lastElapsed = splitTimesRef.current.reduce((sum, t) => sum + t, 0); // sum of all previous splits
+      const newSplitTime = (elapsedTime / 1000) - lastElapsed; // seconds
+      if (newSplitTime > 0) {
+        splitTimesRef.current.push(newSplitTime);
+      }
+    }
+    
   }, [route]);
 
   // Calculate pace based on distance and elapsed time
@@ -127,6 +139,7 @@ const MapScreen = () => {
     const hasPermission = await requestPermissions();
     if (!hasPermission) return;
 
+    // setup location watcher
     watchId.current = Geolocation.watchPosition(
       (position) => {
         // success callback
@@ -157,7 +170,7 @@ const MapScreen = () => {
 
   const stopTracking = () => {
     if (watchId.current) {
-      Geolocation.clearWatch(watchId.current);
+      Geolocation.clearWatch(watchId.current); // cleanup loaction watcher
       watchId.current = 0;
     }
 
@@ -166,11 +179,7 @@ const MapScreen = () => {
   };
 
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-      }}
-    >
+    <SafeAreaView style={{ flex: 1 }}>
       {/* Stats Display */}
       <StatsContainer>
         <StatCard label="Distance" value={`${(distance / 1609.36).toFixed(2)} mi`} />
@@ -208,6 +217,7 @@ const MapScreen = () => {
                 pace,
                 elapsedTime,
                 route,
+                splitTimes: splitTimesRef.current
               });
             }}
              color="#34C759" />
@@ -219,28 +229,6 @@ const MapScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 16,
-    backgroundColor: '#f8f9fa',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6c757d',
-    fontWeight: '500',
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#212529',
-    marginTop: 4,
-  },
   buttonContainer: {
     padding: 16,
     backgroundColor: '#fff',
