@@ -6,40 +6,20 @@ import { check, request, RESULTS, PERMISSIONS } from 'react-native-permissions';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import haversine from 'haversine-distance'
-import { format } from 'path';
+import { formatTime, calculateDistance } from './utils/metrics';
+import { StatsContainer, StatCard } from './components/DisplayStats';
+
+import type { Coord, MapRegion } from './types/location';
 
 // PERSMISSIONS
 const ANDROID_PERMISSION = PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
 const IOS_PERMISSION = PERMISSIONS.IOS.LOCATION_WHEN_IN_USE;
 
-interface Coord{
-  latitude: number
-  longitude: number
-}
-
-// Calculate distance between two coordinates using Haversine formula
-const calculateDistance = (coord1: Coord, coord2: Coord): number => {
-  const distanceMeters = haversine(coord1, coord2)
-
-  return distanceMeters
-};
-
-// Format time as H:MM:SS
-const formatTime = (seconds: number): string => {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60); // Ensure seconds are whole numbers
-  
-  // Ensure minutes doesn't exceed 2 digits (99:59 max)
-  const displayMins = Math.min(mins, 99);
-  const displaySecs = Math.min(secs, 59);
-  
-  return `${displayMins.toString().padStart(2, '0')}:${displaySecs.toString().padStart(2, '0')}`;
-};
 
 const MapScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const [route, setRoute] = useState<Coord[]>([]);
+  const [mapRegion, setMapRegion] = useState<MapRegion>()
   const [distance, setDistance] = useState<number>(0); // in miles
   const [pace, setPace] = useState<string>('--:--'); // minutes per mile
   const [startTime, setStartTime] = useState<number | null>(null);
@@ -81,6 +61,8 @@ const MapScreen = () => {
 
   // Cumulatively Calculate total distance
   useEffect(() => {
+    if (!isTracking)return;
+
     if (route.length < 2) {
       setDistance(0);
       return;
@@ -111,8 +93,9 @@ const MapScreen = () => {
     }
   }, [distance, elapsedTime]);
 
-  // Update elapsed time when tracking
+  // set an interval to update elapsed time every second while tracking
   useEffect(() => {
+
     if (isTracking && startTime) {
       timeInterval.current = setInterval(() => {
         setElapsedTime(Date.now() - startTime);
@@ -132,23 +115,29 @@ const MapScreen = () => {
   }, [isTracking, startTime]);
 
   const startTracking = async () => {
-    // check permissions
-    const hasPermission = await requestPermissions();
-    if (!hasPermission) return;
-
     // Reset tracking state
-    setRoute([]);
-    setDistance(0);
+    setRoute([])
+    setDistance(0)
     setPace('--:--');
     setElapsedTime(0);
     setStartTime(Date.now());
     setIsTracking(true);
+    
+    // check permissions
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
 
     watchId.current = Geolocation.watchPosition(
       (position) => {
         // success callback
         const { latitude, longitude } = position.coords;
         setRoute((prev) => [...prev, { latitude, longitude }]);
+        setMapRegion({
+          latitude,
+          longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        });
       },
       // error callback
       (error) => {
@@ -171,13 +160,9 @@ const MapScreen = () => {
       Geolocation.clearWatch(watchId.current);
       watchId.current = 0;
     }
+
     setIsTracking(false);
     setStartTime(null);
-  };
-
-  const saveWorkout = () => {
-    // TODO: Implement save workout functionality
-    // Navigate to the workout complete screen to show the summary
   };
 
   return (
@@ -187,20 +172,11 @@ const MapScreen = () => {
       }}
     >
       {/* Stats Display */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Distance</Text>
-          <Text style={styles.statValue}>{(distance/1609.36).toFixed(2)} mi</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Pace</Text>
-          <Text style={styles.statValue}>{pace} /mi</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Time</Text>
-          <Text style={styles.statValue}>{formatTime(Math.floor(elapsedTime / 1000))}</Text>
-        </View>
-      </View>
+      <StatsContainer>
+        <StatCard label="Distance" value={`${(distance / 1609.36).toFixed(2)} mi`} />
+        <StatCard label="Pace" value={`${pace} /mi`} />
+        <StatCard label="Time" value={formatTime(Math.floor(elapsedTime / 1000))} />
+      </StatsContainer>
 
       <MapView
         style={{
@@ -208,10 +184,13 @@ const MapScreen = () => {
         }}
         showsUserLocation
         followsUserLocation
+        region={mapRegion}
+        onRegionChangeComplete={setMapRegion}
       >
         <>
           {route.length > 0 && <Marker coordinate={route[0]} title="Start" />}
           <Polyline coordinates={route} strokeWidth={5} strokeColor="#007AFF" />
+          {(route.length > 0 && !isTracking) && <Marker coordinate={route[route.length - 1]} title="finish" />}
         </>
       </MapView>
 
@@ -221,7 +200,17 @@ const MapScreen = () => {
         ) : (
           <View style={styles.buttonRow}>
             <Button title="Stop Tracking" onPress={stopTracking} color="#FF3B30" />
-            <Button title="Save Workout" onPress={saveWorkout} color="#34C759" />
+            <Button title="Save Workout" onPress={() => {
+              stopTracking(); 
+              navigation.navigate('WorkoutComplete', {
+                // pass metrics through to summary
+                distance,
+                pace,
+                elapsedTime,
+                route,
+              });
+            }}
+             color="#34C759" />
           </View>
         )}
       </View>
