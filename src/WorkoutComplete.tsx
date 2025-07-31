@@ -4,12 +4,13 @@ import MapView, { Marker, Polyline, Region } from 'react-native-maps';
 import { useRoute } from '@react-navigation/native';
 import { estimateCalories, formatTime } from './utils/metrics';
 import { StatsContainer, StatCard } from './components/DisplayStats';
-import { BarChart } from 'react-native-gifted-charts'; // Re-import BarChart
+import { BarChart } from 'react-native-gifted-charts'; 
 
 import type { Coord } from './types/location';
 import { getMapRegion } from './utils/map';
 
 const WorkoutComplete = () => {
+  // initalise params
   const routeObj = useRoute();
   const { distance, pace, elapsedTime, route, splitTimes } = routeObj.params as {
     distance: number;
@@ -22,10 +23,23 @@ const WorkoutComplete = () => {
   // Prepare data for the bar chart
   const data = splitTimes.map((value, index) => ({ value, label: `${(index + 1)}` })); // Keep it simple for BarChart
 
+  // alert popup
   Alert.alert("Workout Saved to Activity")
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
+      {/* stats section */}
+      <StatsContainer>
+        <StatCard label="Distance" value={`${(distance / 1609.36).toFixed(2)} mi`} />
+        <StatCard label="Pace" value={`${pace} /mi`} />
+        <StatCard label="Time" value={formatTime(Math.floor(elapsedTime / 1000))} />
+      </StatsContainer>
+      <StatsContainer>
+        <StatCard label="Calories Burnt" value={`${estimateCalories(distance)} kCal`} />
+        <StatCard label="Average Heart Rate" value={`146 bpm`} />
+      </StatsContainer>
+
+      {/* map section */}
       <MapView
         style={{
           flex: 1,
@@ -40,41 +54,28 @@ const WorkoutComplete = () => {
         </>
       </MapView>
 
+      {/* spilt times chart */}
       {(splitTimes.length > 0) && (
-        <View style={{ height: 300, padding: 20 }}>
-      {/* Y-axis title */}
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        {/* Chart */}
-        <View>
-          {/* Top space for alignment */}
-          <Text style={{ textAlign: 'center', marginBottom: 10, fontWeight: 'bold' }}>Bar Chart</Text>
-          <BarChart
-            data={data}
-            barWidth={30}
-            barBorderRadius={4}
-            frontColor="#177AD5"
-            xAxisLabelTextStyle={{ color: 'gray' }}
-            yAxisTextStyle={{ color: 'gray' }}
-            yAxisLabelSuffix="m"
-            yAxisLabelWidth={30}
-            noOfSections={4}
-          />
-          {/* X-axis title */}
-          <Text style={{ textAlign: 'center', marginTop: 10 }}>100m splits</Text>
+        <View style={{ height: 300, padding: 20, alignItems: 'center' }}>
+          {/* Y-axis title */}
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {/* Chart */}
+            <View>
+              <BarChart
+                data={data}
+                barBorderRadius={4}
+                frontColor="#177AD5"
+                xAxisLabelTextStyle={{ color: 'gray' }}
+                yAxisTextStyle={{ color: 'gray' }}
+                yAxisLabelSuffix="s"
+                yAxisLabelWidth={30}
+              />
+              {/* X-axis title */}
+              <Text style={{ textAlign: 'center', marginTop: 10 }}>100m splits</Text>
+            </View>
+          </View>
         </View>
-      </View>
-    </View>
       )}
-      
-      <StatsContainer>
-        <StatCard label="Distance" value={`${(distance / 1609.36).toFixed(2)} mi`} />
-        <StatCard label="Pace" value={`${pace} /mi`} />
-        <StatCard label="Time" value={formatTime(Math.floor(elapsedTime / 1000))} />
-      </StatsContainer>
-      <StatsContainer>
-        <StatCard label="Calories Burnt" value={`${estimateCalories(distance)} kCal`} />
-        <StatCard label="Average Heart Rate" value={`146 bpm`} />
-      </StatsContainer>
     </SafeAreaView>
   );
 };

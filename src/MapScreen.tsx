@@ -30,13 +30,14 @@ const MapScreen = () => {
   const splitTimesRef = useRef<number[]>([]);
 
   const requestPermissions = async () => {
+    // request permission to acces loaction for both ios and android
     const permission = (Platform.OS === 'android') ? ANDROID_PERMISSION : IOS_PERMISSION;
 
     let status = await check(permission);
     if (status !== RESULTS.GRANTED) {
       status = await request(permission);
     }
-    console.log(status)
+
     if (status !== RESULTS.GRANTED) {
       Alert.alert(
         'Permission needed',
@@ -47,13 +48,65 @@ const MapScreen = () => {
     return status === RESULTS.GRANTED;
   };
 
+  const startTracking = async () => {
+    // Reset tracking state
+    setRoute([])
+    setDistance(0)
+    setPace('--:--');
+    setElapsedTime(0);
+    setStartTime(Date.now());
+    setIsTracking(true);
+    
+    // check permissions
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
+
+    // setup location watcher
+    watchId.current = Geolocation.watchPosition(
+      (position) => {
+        // success callback
+        const { latitude, longitude } = position.coords;
+        setRoute((prev) => [...prev, { latitude, longitude }]);
+        setMapRegion({
+          latitude,
+          longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        });
+      },
+      // error callback
+      (error) => {
+        console.warn(error);
+      },
+      // watchposition options
+      {
+        enableHighAccuracy: true,
+        distanceFilter: 5,
+        interval: 5000,
+        fastestInterval: 2000,
+        forceRequestLocation: true,
+        useSignificantChanges: false,
+      }
+    );
+  };
+
+  const stopTracking = () => {
+    if (watchId.current) {
+      Geolocation.clearWatch(watchId.current); // cleanup loaction watcher
+      watchId.current = 0;
+    }
+
+    setIsTracking(false);
+    setStartTime(null);
+  };
+
   useEffect(() => {
     // request permissions
     const checkPermissions = async () => {
       const hasPermission = await requestPermissions();
       // if no permission, return
       if (!hasPermission) {
-        console.warn("Permissions not granted")
+        Alert.alert("Permissions not granted")
         return;
       }
     };
@@ -125,58 +178,6 @@ const MapScreen = () => {
       }
     };
   }, [isTracking, startTime]);
-
-  const startTracking = async () => {
-    // Reset tracking state
-    setRoute([])
-    setDistance(0)
-    setPace('--:--');
-    setElapsedTime(0);
-    setStartTime(Date.now());
-    setIsTracking(true);
-    
-    // check permissions
-    const hasPermission = await requestPermissions();
-    if (!hasPermission) return;
-
-    // setup location watcher
-    watchId.current = Geolocation.watchPosition(
-      (position) => {
-        // success callback
-        const { latitude, longitude } = position.coords;
-        setRoute((prev) => [...prev, { latitude, longitude }]);
-        setMapRegion({
-          latitude,
-          longitude,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        });
-      },
-      // error callback
-      (error) => {
-        console.warn(error);
-      },
-      // watchposition options
-      {
-        enableHighAccuracy: true,
-        distanceFilter: 5,
-        interval: 5000,
-        fastestInterval: 2000,
-        forceRequestLocation: true,
-        useSignificantChanges: false,
-      }
-    );
-  };
-
-  const stopTracking = () => {
-    if (watchId.current) {
-      Geolocation.clearWatch(watchId.current); // cleanup loaction watcher
-      watchId.current = 0;
-    }
-
-    setIsTracking(false);
-    setStartTime(null);
-  };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
