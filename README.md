@@ -1,54 +1,68 @@
-# 🏃‍♂️ Edge GPS Tracker - Take Home Test
+# 🏃‍♂️ Edge GPS Tracker – Take-Home Test
 
-Welcome to the Edge take-home test! This challenge is designed to simulate a real-world feature we might build in the
-Edge app. It focuses on mobile location tracking and front-end feature implementation.
+Welcome to the Edge take-home test!  
+This challenge simulates a real-world feature we might build in the Edge app. It focuses on mobile location tracking and front-end feature implementation.
 
 ---
 
 ## 📦 Overview
 
-This app is a **basic GPS activity tracker**. It contains the following features:
+This app is a basic GPS activity tracker with the following features:
 
-1. Start a workout session that tracks their GPS location.
-   a. Forground location permisions are required from the user
-     i. Error handled by alerts
-2. View their route on a live map.
-   a. Route is tracked uniil activty is stoped or saved
-   b. Live metrics are updated throughout activity:
-     i. Distance (mi)
-     ii. Pace (time/mi)
-     iii. Time
-3. Activity overview can be viewed.
-   a. Route tracked and centered within map region
-   b. View 100m split times
-   c. View additional metrics
-     i. Calories burnt (estimation)
-     ii. Average Heart rate (would require integration with external services)
+1. **Start a workout session** that tracks GPS location  
+  - Requires **foreground location permissions**  
+  - Errors handled via alerts  
+2. **Live route tracking on a map**  
+  - Route tracked until activity is stopped or saved  
+  - Real-time metrics:
+    - Distance (mi)  
+    - Pace (time/mi)  
+    - Time  
+3. **Activity overview screen**  
+  - Route centered in map region  
+  - 100m split times shown  
+  - Additional metrics:
+    - Estimated calories burned  
+    - Average heart rate (would require external service integration)
 
-Code is written with standerd React practices.
-- Hierarchical grouping of folders with reusable tools and components.
+---
+
+## 🧠 Code Structure
+
+- Standard React Native practices  
+- Hierarchical folder structure  
+- Reusable tools and components
 
 ---
 
 ## 🚀 Next Steps
 
-Handling of location tracking is currently handled by a series of useEffect hooks. 
-- This logic would be compartmentalised within context provider along with state management
-
-Workout is not saved
-- backend implementation needed to save to DB
-- current activity would be saved in local storage
+- **Refactor location tracking**
+  - Currently managed with multiple `useEffect` hooks  
+  - Should be moved into a `Context` provider for better state management  
+- **Persist workout data**
+  - Not currently saved  
+  - Backend implementation needed for DB persistence  
+  - Temporary local storage solution could be added
 
 ---
 
 ## 🧪 Project Setup
 
-### 1. Frontend
-
-```bash
-cd location-tracker 
-npm install
-cd ios && pod install && cd ..
-npm run start
-npm run ios
-```
+1. Clone and install dependencies:
+   ```bash
+   cd location-tracker
+   npm install
+   ```
+2. Install iOS dependencies:
+   ```bash   
+   cd ios && pod install && cd ..
+   ```
+3. Start Metro:
+   ```bash   
+   npm run start
+   ```
+4. Run on iOS:
+   ```bash   
+   npm run ios
+   ```
