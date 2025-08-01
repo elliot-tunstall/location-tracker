@@ -7,46 +7,37 @@ Edge app. It focuses on mobile location tracking and front-end feature implement
 
 ## 📦 Overview
 
-Your task is to build a **basic GPS activity tracker**. Users should
-be able to:
+This app is a **basic GPS activity tracker**. It contains the following features:
 
 1. Start a workout session that tracks their GPS location.
-2. View their route on a live map.
-3. Stop the session and move to the next screen.
-4. (Bonus) View metrics like time, distance.
+   a. Forground location permisions are required from the user
+     i. Error handled by alerts
+3. View their route on a live map.
+   a. Route is tracked uniil activty is stoped or saved
+   b. Live metrics are updated throughout activity:
+     i. Distance (mi)
+     ii. Pace (time/mi)
+     iii. Time
+4. Activity overview can be viewed.
+   a. Route tracked and centered within map region
+   b. View 100m split times
+   c. View additional metrics
+     i. Calories burnt (estimation)
+     ii. Average Heart rate (would require integration with external services)
+
+Code is written with standerd React practices.
+- Hierarchical grouping of folders with reusable tools and components.
 
 ---
 
-## 🧠 What We're Looking For
+## 🚀 Next Steps
 
-This test is not about pixel-perfect UI + design — we care about:
+Handling of location tracking is currently handled by a series of useEffect hooks. 
+- This logic would be compartmentalised within context provider along with state management
 
-- Code clarity and structure
-- Realistic handling of location tracking
-- Practical decision-making
-- Communication (via README/comments)
-
----
-
-## 🚀 Requirements
-
-### 📱 Frontend (React Native + TypeScript)
-
-- Request foreground location permissions from the user
-- Start and stop GPS location tracking
-- Display the route in real-time using a map
-
----
-
-## ✅ Bonus Ideas (Optional)
-
-- Track and display total distance using Haversine formula
-- Calculate and display average speed
-- Handle permission errors gracefully
-- Store a backup of location data locally in case of crash
-- Auto-pause tracking when the user is stationary / auto-resume when moving
-- Break down of split times (e.g., every km)
-- Any other features you think would be useful
+Workout is not saved
+- backend implementation needed to save to DB
+- current activity would be saved in local storage
 
 ---
 
